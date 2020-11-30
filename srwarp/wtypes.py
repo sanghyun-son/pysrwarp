@@ -3,6 +3,7 @@ import typing
 import torch
 
 _II = typing.Tuple[int, int]
+_III = typing.Tuple[int, int]
 
 _T = typing.Optional[torch.Tensor]
 _TT = typing.Tuple[torch.Tensor, torch.Tensor]

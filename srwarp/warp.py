@@ -100,7 +100,7 @@ def warp_by_grid(
                 msg = 'kernel type: {} is not supported!'.format(kernel_type)
                 raise ValueError(msg)
         else:
-            kernel_size = 8
+            kernel_size = 12
     else:
         if hasattr(kernel_type, 'kernel_size'):
             kernel_size = kernel_type.kernel_size

@@ -57,9 +57,41 @@ def transform_corners(x: torch.Tensor, m: torch.Tensor) -> torch.Tensor:
     return c
 
 @torch.no_grad()
-def compensate_offset(m: torch.Tensor, ix: float, iy: float) -> torch.Tensor:
+def compensate_matrix(
+        x: torch.Tensor,
+        m: torch.Tensor) -> typing.Tuple[torch.Tensor, wtypes._II, wtypes._II]:
+
+    # (3, 4)
+    c = transform_corners(x, m)
+
+    def get_dimension(dim: int) -> wtypes._II:
+        s_min = c[dim].min()
+        s_max = c[dim].max()
+        s_len = (s_max - s_min).ceil()
+        s_len = int(s_len.item())
+        s_offset = (s_min + 0.5).floor()
+        s_offset = -int(s_offset.item())
+        return s_len, s_offset
+
+    x_len, x_offset = get_dimension(0)
+    y_len, y_offset = get_dimension(1)
+    t = translation(x_offset, y_offset)
+    m = torch.matmul(t, m)
+    return m, (y_len, x_len), (y_offset, x_offset)
+
+@torch.no_grad()
+def compensate_offset(
+        m: torch.Tensor,
+        ix: float,
+        iy: float,
+        offset_first: bool=True) -> torch.Tensor:
+
     t = translation(ix, iy)
-    m = torch.matmul(m, t)
+    if offset_first:
+        m = torch.matmul(m, t)
+    else:
+        m = torch.matmul(t, m)
+
     return m
 
 @torch.no_grad()
