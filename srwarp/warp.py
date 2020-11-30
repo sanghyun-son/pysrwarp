@@ -3,7 +3,7 @@ import typing
 import torch
 from torch import nn
 
-from srwarp import types
+from srwarp import wtypes
 from srwarp import transform
 from srwarp import grid
 from srwarp import kernel
@@ -81,10 +81,10 @@ def warp_by_grid(
         x: torch.Tensor,
         grid_raw: torch.Tensor,
         yi: torch.Tensor,
-        sizes: typing.Optional[types._II]=None,
+        sizes: typing.Optional[wtypes._II]=None,
         kernel_type: typing.Union[str, nn.Module]='bicubic',
         padding_type: str='reflect',
-        j: typing.Optional[types._TT]=None,
+        j: typing.Optional[wtypes._TT]=None,
         regularize: bool=True,
         fill: float=-255) -> torch.Tensor:
 
@@ -148,7 +148,7 @@ def warp_by_function(
         x: torch.Tensor,
         f: typing.Union[torch.Tensor, typing.Callable],
         f_inverse: bool=True,
-        sizes: typing.Union[types._II, str, None]=None,
+        sizes: typing.Union[wtypes._II, str, None]=None,
         kernel_type: typing.Union[str, nn.Module]='bicubic',
         padding_type: str='reflect',
         adaptive_grid: bool=False,

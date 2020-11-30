@@ -4,7 +4,7 @@ import torch
 from torch import autograd
 from torch.autograd import function
 
-from srwarp import types
+from srwarp import wtypes
 import srwarp_cuda
 
 
@@ -80,7 +80,7 @@ class SVF(autograd.Function):
     @staticmethod
     def backward(
             ctx: function._ContextMethodMixin,
-            grad_output: torch.Tensor) -> typing.List[types._T]:
+            grad_output: torch.Tensor) -> typing.List[wtypes._T]:
 
         x, weight, xi, yi = ctx.saved_tensors
         k = ctx.k

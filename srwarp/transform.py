@@ -2,7 +2,7 @@ import typing
 
 import torch
 
-from srwarp import types
+from srwarp import wtypes
 from srwarp import grid
 
 @torch.no_grad()
@@ -57,6 +57,31 @@ def transform_corners(x: torch.Tensor, m: torch.Tensor) -> torch.Tensor:
     return c
 
 @torch.no_grad()
+def compensate_offset(m: torch.Tensor, ix: float, iy: float) -> torch.Tensor:
+    t = translation(ix, iy)
+    m = torch.matmul(m, t)
+    return m
+
+@torch.no_grad()
+def translation(tx: float, ty: float) -> torch.Tensor:
+    m = torch.Tensor([
+        [1, 0, tx],
+        [0, 1, ty],
+        [0, 0, 1],
+    ])
+    return m
+
+@torch.no_grad()
+def compensate_scale(
+        m: torch.Tensor,
+        sx: float,
+        sy: typing.Optional[float]=None) -> torch.Tensor:
+
+    s = scaling(sx, sy=sy)
+    m = torch.matmul(m, s)
+    return m
+
+@torch.no_grad()
 def scaling(sx: float, sy: typing.Optional[float]=None) -> torch.Tensor:
     if sy is None:
         sy = sx
@@ -75,7 +100,7 @@ def jacobian(
         f: typing.Union[torch.Tensor, typing.Callable],
         sizes: typing.Tuple[int, int],
         yi: typing.Optional[torch.Tensor]=None,
-        eps: float=0.5) -> types._TT:
+        eps: float=0.5) -> wtypes._TT:
 
     '''
     J = [

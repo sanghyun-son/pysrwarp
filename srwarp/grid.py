@@ -2,13 +2,13 @@ import typing
 
 import torch
 
-from srwarp import types
+from srwarp import wtypes
 import srwarp_cuda
 
 @torch.no_grad()
 def projective_grid(
         m: torch.Tensor,
-        sizes: types._II,
+        sizes: wtypes._II,
         eps_y: float=0,
         eps_x: float=0) -> torch.Tensor:
 
@@ -29,7 +29,7 @@ def projective_grid(
 @torch.no_grad()
 def get_safe(
         grid_raw: torch.Tensor,
-        sizes_source: types._II) -> types._TT:
+        sizes_source: wtypes._II) -> wtypes._TT:
 
     # (2, 1)
     bound = grid_raw.new_tensor([

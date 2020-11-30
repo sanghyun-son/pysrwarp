@@ -2,7 +2,7 @@ import typing
 
 import torch
 
-from srwarp import types
+from srwarp import wtypes
 
 @torch.no_grad()
 def get_omega(
@@ -23,7 +23,7 @@ def get_ab(
         dv: torch.Tensor,
         uvx: torch.Tensor,
         uvy: torch.Tensor,
-        regularize: bool=True) -> types._TT:
+        regularize: bool=True) -> wtypes._TT:
 
     det = du[0] * dv[1] - dv[0] * du[1]
     det.pow_(2)
@@ -54,7 +54,7 @@ def get_ab(
 def get_modulator(
         du: torch.Tensor,
         dv: torch.Tensor,
-        regularize: bool=True) -> types._TTTT:
+        regularize: bool=True) -> wtypes._TTTT:
 
     uvx = du[0].pow(2) + dv[0].pow(2)
     uvy = du[1].pow(2) + dv[1].pow(2)
@@ -79,8 +79,8 @@ def get_modulator(
 def modulation(
         ox: torch.Tensor,
         oy: torch.Tensor,
-        j: types._TT,
-        regularize: bool=True) -> types._TT:
+        j: wtypes._TT,
+        regularize: bool=True) -> wtypes._TT:
 
     mxx, mxy, myx, myy = get_modulator(*j, regularize=regularize)
     oxp = mxx * ox + mxy * oy
