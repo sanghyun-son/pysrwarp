@@ -1,3 +1,4 @@
+import math
 import typing
 
 import torch
@@ -17,16 +18,11 @@ def get_omega(
     return omega
 
 @torch.no_grad()
-def get_ab(
+def solve_ab(
         omega: torch.Tensor,
-        du: torch.Tensor,
-        dv: torch.Tensor,
+        det: torch.Tensor,
         uvx: torch.Tensor,
-        uvy: torch.Tensor,
-        regularize: bool=True) -> wtypes._TT:
-
-    det = du[0] * dv[1] - dv[0] * du[1]
-    det.pow_(2)
+        uvy: torch.Tensor) -> wtypes._TT:
 
     cos = torch.cos(omega)
     cos.pow_(2)
@@ -40,6 +36,30 @@ def get_ab(
 
     a_inv = den_a / num
     b_inv = den_b / num
+    return a_inv, b_inv
+
+@torch.no_grad()
+def get_ab(
+        omega: torch.Tensor,
+        du: torch.Tensor,
+        dv: torch.Tensor,
+        uvx: torch.Tensor,
+        uvy: torch.Tensor,
+        regularize: bool=True) -> wtypes._TT:
+
+    det = du[0] * dv[1] - dv[0] * du[1]
+    det.pow_(2)
+
+    # Consider general solution of the tangent to avoid NaN
+    a_inv_1, b_inv_1 = solve_ab(omega, det, uvx, uvy)
+    a_inv_2, b_inv_2 = solve_ab(omega + math.pi / 2, det, uvx, uvy)
+
+    a_inv_1_pos = (a_inv_1 > 0).float()
+    b_inv_1_pos = (b_inv_1 > 0).float()
+
+    # Take positive values
+    a_inv = a_inv_1_pos * a_inv_1 + (1 - a_inv_1_pos) * a_inv_2
+    b_inv = b_inv_1_pos * b_inv_1 + (1 - b_inv_1_pos) * b_inv_2
 
     a_inv.sqrt_()
     b_inv.sqrt_()

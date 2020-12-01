@@ -2,6 +2,7 @@ import typing
 
 import torch
 
+_I = typing.Optional[int]
 _II = typing.Tuple[int, int]
 _III = typing.Tuple[int, int]
 
