@@ -20,7 +20,7 @@ def projective_grid(
         eps_x (float, optional): Perturbation alogn x-axis.
     '''
     # Must be done on GPU
-    m = m.cuda()
+    m = m.float().cuda()
     grid = m.new(sizes[0] * sizes[1], 2)
     srwarp_cuda.projective_grid(m, sizes[0], sizes[1], grid, eps_y, eps_x)
     grid = grid.t().contiguous()

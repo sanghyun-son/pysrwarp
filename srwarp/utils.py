@@ -2,6 +2,29 @@ import typing
 
 import torch
 
+from srwarp import wtypes
+
+def cast_input(x: torch.Tensor) -> wtypes._TD:
+    if not x.dtype.is_floating_point:
+        dtype = x.dtype
+        x = x.float()
+    else:
+        dtype = None
+
+    return x, dtype
+
+def cast_output(x: torch.Tensor, dtype: wtypes._D) -> torch.Tensor:
+    if dtype is not None:
+        if not dtype.is_floating_point:
+            x = x.round()
+        # To prevent over/underflow when converting types
+        if dtype is torch.uint8:
+            x = x.clamp(0, 255)
+
+        x = x.to(dtype=dtype)
+
+    return x
+
 def reflect_padding(
         x: torch.Tensor,
         dim: int,

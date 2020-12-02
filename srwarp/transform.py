@@ -1,9 +1,43 @@
 import typing
 
 import torch
+from torch import cuda
 
 from srwarp import wtypes
 from srwarp import grid
+
+
+class Matrix3x3(object):
+    '''
+    torch.Tensor is not a suitable format
+    to handle small transformation matrices
+    due to several limitations:
+        1) Precision
+        2) Speed
+    '''
+
+    def __init__(
+            self,
+            a: float,
+            b: float,
+            c: float,
+            d: float,
+            e: float,
+            f: float,
+            g: float,
+            h: float,
+            i: float) -> None:
+
+        self.data = [
+            [a, b, c],
+            [d, e, f],
+            [g, h, i],
+        ]
+        return
+
+    def inverse(self):
+        pass
+
 
 @torch.no_grad()
 def inverse_3x3(m: torch.Tensor) -> torch.Tensor:
@@ -32,21 +66,28 @@ def inverse_3x3(m: torch.Tensor) -> torch.Tensor:
     if abs(d) < 1e-12:
         raise ValueError('Inverse matrix does not exist!')
 
-    inv = torch.Tensor([
+    inv = torch.DoubleTensor([
         [cofactor_00, cofactor_10, cofactor_20],
         [cofactor_01, cofactor_11, cofactor_21],
         [cofactor_02, cofactor_12, cofactor_22],
     ])
-    inv = inv.to(dtype=m.dtype, device=m.device)
+    #inv = inv.to(dtype=m.dtype, device=m.device)
     inv /= d
     return inv
 
 @torch.no_grad()
-def transform_corners(x: torch.Tensor, m: torch.Tensor) -> torch.Tensor:
+def transform_corners(
+        x: torch.Tensor,
+        m: torch.Tensor,
+        digits_allowed: int=4) -> torch.Tensor:
+
+    '''
+    Assume that m is a DoubleTensor.
+    '''
     h = x.size(-2)
     w = x.size(-1)
     # For higher accuracy
-    m = m.double()
+    #m = m.double()
     c = m.new_tensor([
         [-0.5, -0.5, w - 0.5, w - 0.5],
         [-0.5, h - 0.5, -0.5, h - 0.5],
@@ -54,6 +95,8 @@ def transform_corners(x: torch.Tensor, m: torch.Tensor) -> torch.Tensor:
     ])
     c = torch.matmul(m, c)
     c = c / c[-1, :]
+    #factor = 10**digits_allowed
+    #c = torch.trunc(factor * c) / factor
     return c
 
 @torch.no_grad()
@@ -96,7 +139,7 @@ def compensate_offset(
 
 @torch.no_grad()
 def translation(tx: float, ty: float) -> torch.Tensor:
-    m = torch.Tensor([
+    m = torch.DoubleTensor([
         [1, 0, tx],
         [0, 1, ty],
         [0, 0, 1],
@@ -120,7 +163,7 @@ def scaling(sx: float, sy: typing.Optional[float]=None) -> torch.Tensor:
 
     tx = 0.5 * (sx - 1)
     ty = 0.5 * (sy - 1)
-    m = torch.Tensor([
+    m = torch.DoubleTensor([
         [sx, 0, tx],
         [0, sy, ty],
         [0, 0, 1],
@@ -158,3 +201,10 @@ def jacobian(
     du = (dr - dl) / (2 * eps)
     dv = (dt - db) / (2 * eps)
     return du, dv
+
+@torch.no_grad()
+def replicate_matrix(m: torch.Tensor, do_replicate: bool=True) -> torch.Tensor:
+    if do_replicate:
+        m = m.repeat(cuda.device_count(), 1)
+
+    return m
