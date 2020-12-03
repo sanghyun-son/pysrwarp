@@ -10,4 +10,13 @@ void SvfProjectiveGridCuda(
     const float eps_x
 );
 
+void SvfProjectiveGridDoubleCuda(
+    const double* m,
+    const int h,
+    const int w,
+    double* grid,
+    const double eps_y,
+    const double eps_x
+);
+
 #endif

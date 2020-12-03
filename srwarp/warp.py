@@ -67,6 +67,7 @@ def get_local_offset(
         padding - kernel_size + comp,
         padding + comp - 1,
         kernel_size,
+        dtype=grid_offset.dtype,
         device=grid_offset.device,
     )
     # (1, 1, k)
@@ -120,6 +121,12 @@ def warp_by_grid(
 
         if j is not None:
             ox, oy = adaptive.modulation(ox, oy, j, regularize=regularize)
+
+    if ox.dtype == torch.float64 and oy.dtype == torch.float64:
+        ox = ox.float()
+        oy = oy.float()
+    else:
+        raise ValueError('Single precision detected!')
 
     # Calculate kernel weights
     if isinstance(kernel_type, str):

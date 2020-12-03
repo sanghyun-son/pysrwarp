@@ -20,9 +20,14 @@ def projective_grid(
         eps_x (float, optional): Perturbation alogn x-axis.
     '''
     # Must be done on GPU
-    m = m.float().cuda()
+    m = m.cuda()
     grid = m.new(sizes[0] * sizes[1], 2)
-    srwarp_cuda.projective_grid(m, sizes[0], sizes[1], grid, eps_y, eps_x)
+    args = [m, sizes[0], sizes[1], grid, eps_y, eps_x]
+    if m.dtype == torch.float64:
+        srwarp_cuda.projective_grid_double(*args)
+    else:
+        srwarp_cuda.projective_grid(*args)
+
     grid = grid.t().contiguous()
     return grid
 

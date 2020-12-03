@@ -316,7 +316,7 @@ class Interactive(QMainWindow):
                 self.img, m, (w_new, h_new), flags=self.inter,
             )
         elif self.backend == 'core':
-            m = torch.Tensor(m)
+            m = torch.Tensor(m).double()
             y = warp.warp_by_function(
                 self.img_tensor,
                 m,

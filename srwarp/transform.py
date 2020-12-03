@@ -186,6 +186,10 @@ def jacobian(
     if isinstance(f, torch.Tensor):
         grid_function = grid.projective_grid
 
+    # We do not need such high precisions for the Jacobian
+    # Still, we use the double precision to ensure accuracy of the following
+    # equations
+    #f = f.float()
     dl = grid_function(f, sizes, eps_x=-eps)
     dr = grid_function(f, sizes, eps_x=eps)
     dt = grid_function(f, sizes, eps_y=-eps)

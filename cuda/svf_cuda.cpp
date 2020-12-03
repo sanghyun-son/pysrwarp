@@ -18,6 +18,21 @@ void SvfProjectiveGrid(
     return;
 }
 
+void SvfProjectiveGridDouble(
+    const torch::Tensor m,
+    const int h,
+    const int w,
+    torch::Tensor grid,
+    const double eps_y,
+    const double eps_x
+)
+{
+    SvfProjectiveGridDoubleCuda(
+        m.data_ptr<double>(), h, w, grid.data_ptr<double>(), eps_y, eps_x
+    );
+    return;
+}
+
 void SvfForward(
     const torch::Tensor x,
     const torch::Tensor weight,
@@ -92,6 +107,7 @@ void SvfBackward(
 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("projective_grid", &SvfProjectiveGrid, "Projective_grid");
+    m.def("projective_grid_double", &SvfProjectiveGridDouble, "Projective_grid_double");
     m.def("forward", &SvfForward, "SVF_forward");
     m.def("backward", &SvfBackward, "SVF_backward");
 }

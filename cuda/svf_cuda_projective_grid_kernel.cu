@@ -36,6 +36,34 @@ __global__ void SvfProjectiveGridCudaKernel(
     return;
 }
 
+__global__ void SvfProjectiveGridDoubleCudaKernel(
+    const double* __restrict__ m,
+    const int h,
+    const int w,
+    double* __restrict__ grid,
+    const double eps_y,
+    const double eps_x
+)
+{
+    int px = blockIdx.y * blockDim.x + threadIdx.x;
+    if (px >= w) {
+        return;
+    }
+
+    int p = blockIdx.x * w + px;
+    double pos_i = double(blockIdx.x) + eps_y;
+    double pos_j = double(px) + eps_x;
+    double x = pos_j * m[0] + pos_i * m[1] + m[2];
+    double y = pos_j * m[3] + pos_i * m[4] + m[5];
+    double z = pos_j * m[6] + pos_i * m[7] + m[8];
+
+    x /= z;
+    y /= z;
+
+    grid[2 * p] = x;
+    grid[2 * p + 1] = y;
+    return;
+}
 
 void SvfProjectiveGridCuda(
     const float* m,
@@ -48,6 +76,22 @@ void SvfProjectiveGridCuda(
 {
     dim3 num_blocks(h, int((w + NUM_THREADS - 1) / NUM_THREADS));
     SvfProjectiveGridCudaKernel<<<num_blocks, NUM_THREADS>>>(
+        m, h, w, grid, eps_y, eps_x
+    );
+    return;
+}
+
+void SvfProjectiveGridDoubleCuda(
+    const double* m,
+    const int h,
+    const int w,
+    double* grid,
+    const double eps_y,
+    const double eps_x
+)
+{
+    dim3 num_blocks(h, int((w + NUM_THREADS - 1) / NUM_THREADS));
+    SvfProjectiveGridDoubleCudaKernel<<<num_blocks, NUM_THREADS>>>(
         m, h, w, grid, eps_y, eps_x
     );
     return;
