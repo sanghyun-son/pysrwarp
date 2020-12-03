@@ -46,3 +46,15 @@ def get_safe(
     grid_raw = grid_raw[..., is_in]
     yi, = is_in.nonzero(as_tuple=True)
     return grid_raw, yi
+
+@torch.no_grad()
+def get_safe_projective_grid(
+        m: torch.Tensor,
+        sizes: wtypes._II,
+        sizes_source: wtypes._II,
+        eps_y: float=0,
+        eps_x: float=0) -> wtypes._TT:
+
+    grid_raw = projective_grid(m, sizes, eps_y=eps_y, eps_x=eps_x)
+    grid_raw, yi = get_safe(grid_raw, sizes_source)
+    return grid_raw, yi

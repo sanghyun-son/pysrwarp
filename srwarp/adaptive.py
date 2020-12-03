@@ -3,6 +3,7 @@ import typing
 
 import torch
 
+from srwarp import transform
 from srwarp import wtypes
 
 @torch.no_grad()
@@ -47,7 +48,7 @@ def get_ab(
         uvy: torch.Tensor,
         regularize: bool=True) -> wtypes._TT:
 
-    det = du[0] * dv[1] - dv[0] * du[1]
+    det = transform.determinant((du, dv))
     det.pow_(2)
 
     # Consider general solution of the tangent to avoid NaN

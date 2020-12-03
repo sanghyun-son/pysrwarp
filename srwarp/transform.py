@@ -207,6 +207,12 @@ def jacobian(
     return du, dv
 
 @torch.no_grad()
+def determinant(j: wtypes._TT) -> torch.Tensor:
+    du, dv = j
+    det = du[0] * dv[1] - dv[0] * du[1]
+    return det
+
+@torch.no_grad()
 def replicate_matrix(m: torch.Tensor, do_replicate: bool=True) -> torch.Tensor:
     if do_replicate:
         m = m.repeat(cuda.device_count(), 1)
