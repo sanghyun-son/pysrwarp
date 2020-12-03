@@ -1,3 +1,4 @@
+import math
 import typing
 
 import torch
@@ -102,7 +103,8 @@ def transform_corners(
 @torch.no_grad()
 def compensate_matrix(
         x: torch.Tensor,
-        m: torch.Tensor) -> typing.Tuple[torch.Tensor, wtypes._II, wtypes._II]:
+        m: torch.Tensor,
+        exact: bool=False) -> typing.Tuple[torch.Tensor, wtypes._II, wtypes._II]:
 
     # (3, 4)
     c = transform_corners(x, m)
@@ -112,8 +114,12 @@ def compensate_matrix(
         s_max = c[dim].max()
         s_len = (s_max - s_min).ceil()
         s_len = int(s_len.item())
-        s_offset = (s_min + 0.5).floor()
-        s_offset = -int(s_offset.item())
+        if exact:
+            s_offset = s_min
+        else:
+            s_offset = (s_min + 0.5).floor()
+            s_offset = -int(s_offset.item())
+
         return s_len, s_offset
 
     x_len, x_offset = get_dimension(0)
@@ -166,6 +172,21 @@ def scaling(sx: float, sy: typing.Optional[float]=None) -> torch.Tensor:
     m = torch.DoubleTensor([
         [sx, 0, tx],
         [0, sy, ty],
+        [0, 0, 1],
+    ])
+    return m
+
+@torch.no_grad()
+def compensate_rotation(m: torch.Tensor, theta: float) -> torch.Tensor:
+    r = rotation(theta)
+    m = torch.matmul(m, r)
+    return m
+
+@torch.no_grad()
+def rotation(theta: float) -> torch.Tensor:
+    m = torch.DoubleTensor([
+        [math.cos(theta), -math.sin(theta), 0],
+        [math.sin(theta), math.cos(theta), 0],
         [0, 0, 1],
     ])
     return m

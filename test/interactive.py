@@ -313,7 +313,11 @@ class Interactive(QMainWindow):
         m, y_min, x_min, h_new, w_new = self.get_matrix()
         if self.backend == 'opencv':
             y = cv2.warpPerspective(
-                self.img, m, (w_new, h_new), flags=self.inter,
+                self.img,
+                m,
+                (w_new, h_new),
+                flags=self.inter,
+                borderMode=cv2.BORDER_REFLECT,
             )
         elif self.backend == 'core':
             m = torch.Tensor(m).double()
