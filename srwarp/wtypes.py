@@ -10,6 +10,7 @@ _F = typing.Optional[float]
 
 _T = typing.Optional[torch.Tensor]
 _TT = typing.Tuple[torch.Tensor, torch.Tensor]
+_TTT = typing.Tuple[torch.Tensor, torch.Tensor, torch.Tensor]
 _TTTT = typing.Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]
 
 _D = typing.Optional[torch.dtype]

@@ -10,6 +10,7 @@ from srwarp import kernel
 from srwarp import svf
 from srwarp import adaptive
 from srwarp import utils
+from srwarp import debug
 
 @torch.no_grad()
 def mapping(grid_raw: torch.Tensor, kernel_size: int) -> torch.Tensor:
@@ -87,7 +88,8 @@ def warp_by_grid(
         padding_type: str='reflect',
         j: typing.Optional[wtypes._TT]=None,
         regularize: bool=True,
-        fill: float=-255) -> torch.Tensor:
+        fill: float=-255,
+        dump: typing.Optional[dict]=None) -> torch.Tensor:
 
     if sizes is None:
         sizes = (x.size(-2), x.size(-1))
@@ -119,8 +121,14 @@ def warp_by_grid(
         # (N, k, 1)
         oy = oy.unsqueeze_(-1)
 
+        if dump is not None:
+            debug.dump_variable(dump, 'ox', ox)
+            debug.dump_variable(dump, 'oy', oy)
+
         if j is not None:
-            ox, oy = adaptive.modulation(ox, oy, j, regularize=regularize)
+            ox, oy = adaptive.modulation(
+                ox, oy, j, regularize=regularize, dump=dump,
+            )
 
     if ox.dtype == torch.float64 and oy.dtype == torch.float64:
         ox = ox.float()
@@ -160,7 +168,8 @@ def warp_by_function(
         padding_type: str='reflect',
         adaptive_grid: bool=False,
         regularize: bool=True,
-        fill: float=-255) -> torch.Tensor:
+        fill: float=-255,
+        dump: typing.Optional[dict]=None) -> torch.Tensor:
 
     if not f_inverse:
         if isinstance(f, torch.Tensor):
@@ -183,6 +192,11 @@ def warp_by_function(
     else:
         j = None
 
+    if dump is not None:
+        debug.dump_variable(dump, 'grid_raw', grid_raw)
+        debug.dump_variable(dump, 'yi', yi)
+        debug.dump_variable(dump, 'j', j)
+
     y = warp_by_grid(
         x,
         grid_raw,
@@ -193,6 +207,7 @@ def warp_by_function(
         j=j,
         regularize=regularize,
         fill=fill,
+        dump=dump,
     )
     return y
 

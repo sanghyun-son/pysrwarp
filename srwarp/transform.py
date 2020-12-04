@@ -224,7 +224,7 @@ def jacobian(
 
     # (2, N) each
     du = (dr - dl) / (2 * eps)
-    dv = (dt - db) / (2 * eps)
+    dv = (db - dt) / (2 * eps)
     return du, dv
 
 @torch.no_grad()

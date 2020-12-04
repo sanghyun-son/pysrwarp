@@ -5,6 +5,7 @@ import torch
 
 from srwarp import transform
 from srwarp import wtypes
+from srwarp import debug
 
 @torch.no_grad()
 def get_omega(
@@ -19,27 +20,6 @@ def get_omega(
     return omega
 
 @torch.no_grad()
-def solve_ab(
-        omega: torch.Tensor,
-        det: torch.Tensor,
-        uvx: torch.Tensor,
-        uvy: torch.Tensor) -> wtypes._TT:
-
-    cos = torch.cos(omega)
-    cos.pow_(2)
-
-    # cos(2x) = 2cos^2(x) - 1
-    num = det * (2 * cos - 1)
-
-    den_shared = cos * (uvx + uvy)
-    den_a = den_shared - uvx
-    den_b = den_shared - uvy
-
-    a_inv = den_a / num
-    b_inv = den_b / num
-    return a_inv, b_inv
-
-@torch.no_grad()
 def get_ab(
         omega: torch.Tensor,
         du: torch.Tensor,
@@ -51,49 +31,81 @@ def get_ab(
     det = transform.determinant((du, dv))
     det.pow_(2)
 
-    # Consider general solution of the tangent to avoid NaN
-    a_inv_1, b_inv_1 = solve_ab(omega, det, uvx, uvy)
-    a_inv_2, b_inv_2 = solve_ab(omega + math.pi / 2, det, uvx, uvy)
+    cos = torch.cos(omega)
+    cos.pow_(2)
 
-    a_inv_1_pos = (a_inv_1 > 0).float()
-    b_inv_1_pos = (b_inv_1 > 0).float()
+    # cos(2x) = 2cos^2(x) - 1
+    den = det * (2 * cos - 1)
 
-    # Take positive values
-    a_inv = a_inv_1_pos * a_inv_1 + (1 - a_inv_1_pos) * a_inv_2
-    b_inv = b_inv_1_pos * b_inv_1 + (1 - b_inv_1_pos) * b_inv_2
-
-    a_inv.sqrt_()
-    b_inv.sqrt_()
-
+    num_shared = cos * (uvx + uvy)
+    a = num_shared - uvx
+    b = num_shared - uvy
+    a /= den
+    b /= den
+    a.abs_()
+    b.abs_()
+    a.sqrt_()
+    b.sqrt_()
     if regularize:
-        a_inv.clamp_(max=1)
-        b_inv.clamp_(max=1)
+        a.clamp_(max=1)
+        b.clamp_(max=1)
 
-    return a_inv, b_inv
+    return a, b
+
+@torch.no_grad()
+def align(omega: torch.Tensor, a: torch.Tensor, b: torch.Tensor) -> wtypes._TTT:
+    quad = math.pi / 4
+    range_1 = torch.logical_and(omega >= -quad, omega < quad).float()
+    range_2 = torch.logical_and(omega >= quad, omega < 3 * quad).float()
+    range_31 = (omega >= 3 * quad).float()
+    range_32 = (omega < -3 * quad).float()
+    range_4 = torch.logical_and(omega >= -3 * quad, omega < -quad).float()
+
+    omega_new = range_1 * omega
+    omega_new += range_2 * (omega - math.pi / 2)
+    omega_new += range_31 * (omega - math.pi)
+    omega_new += range_32 * (omega + math.pi)
+    omega_new += range_4 * (omega + math.pi / 2)
+
+    a_new = (range_1 + range_31 + range_32) * a
+    a_new += (range_2 + range_4) * b
+
+    b_new = (range_1 + range_31 + range_32) * b
+    b_new += (range_2 + range_4) * a
+
+    return omega_new, a_new, b_new
 
 @torch.no_grad()
 def get_modulator(
         du: torch.Tensor,
         dv: torch.Tensor,
-        regularize: bool=True) -> wtypes._TTTT:
+        regularize: bool=True,
+        dump: typing.Optional[dict]=None) -> wtypes._TTTT:
 
     uvx = du[0].pow(2) + dv[0].pow(2)
     uvy = du[1].pow(2) + dv[1].pow(2)
 
     omega = get_omega(du, dv, uvx, uvy)
-    a_inv, b_inv = get_ab(omega, du, dv, uvx, uvy, regularize=regularize)
+    a, b = get_ab(omega, du, dv, uvx, uvy, regularize=regularize)
+    # Optional?
+    #omega, a, b = align(omega, a, b)
+
+    if dump is not None:
+        debug.dump_variable(dump, 'omega', omega)
+        debug.dump_variable(dump, 'a', a)
+        debug.dump_variable(dump, 'b', b)
 
     omega = omega.view(-1, 1, 1)
-    a_inv = a_inv.view(-1, 1, 1)
-    b_inv = b_inv.view(-1, 1, 1)
+    a = a.view(-1, 1, 1)
+    b = b.view(-1, 1, 1)
 
     cos = omega.cos()
     sin = omega.sin()
 
-    mxx = a_inv * cos
-    mxy = a_inv * sin
-    myx = -b_inv * sin
-    myy = b_inv * cos
+    mxx = a * cos
+    mxy = a * sin
+    myx = -b * sin
+    myy = b * cos
     return mxx, mxy, myx, myy
 
 @torch.no_grad()
@@ -101,9 +113,19 @@ def modulation(
         ox: torch.Tensor,
         oy: torch.Tensor,
         j: wtypes._TT,
-        regularize: bool=True) -> wtypes._TT:
+        regularize: bool=True,
+        dump: typing.Optional[dict]=None) -> wtypes._TT:
 
-    mxx, mxy, myx, myy = get_modulator(*j, regularize=regularize)
+    mxx, mxy, myx, myy = get_modulator(*j, regularize=regularize, dump=dump)
     oxp = mxx * ox + mxy * oy
     oyp = myx * ox + myy * oy
+
+    factor = torch.sqrt((oxp.pow(2) + oyp.pow(2)) / (ox.pow(2) + oy.pow(2)))
+    oxp = factor * ox
+    oyp = factor * oy
+
+    if dump is not None:
+        debug.dump_variable(dump, 'oxp', oxp)
+        debug.dump_variable(dump, 'oyp', oyp)
+
     return oxp, oyp
