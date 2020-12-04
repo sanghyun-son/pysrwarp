@@ -114,13 +114,20 @@ def modulation(
         oy: torch.Tensor,
         j: wtypes._TT,
         regularize: bool=True,
+        eps: float=1e-12,
         dump: typing.Optional[dict]=None) -> wtypes._TT:
 
     mxx, mxy, myx, myy = get_modulator(*j, regularize=regularize, dump=dump)
     oxp = mxx * ox + mxy * oy
     oyp = myx * ox + myy * oy
 
-    factor = torch.sqrt((oxp.pow(2) + oyp.pow(2)) / (ox.pow(2) + oy.pow(2)))
+    num = oxp.pow(2) + oyp.pow(2)
+    den = ox.pow(2) + oy.pow(2)
+    # Zero-handling
+    origin = (den < eps).float()
+    den = origin * eps + (1 - origin) * den
+
+    factor = torch.sqrt(num / den)
     oxp = factor * ox
     oyp = factor * oy
 
