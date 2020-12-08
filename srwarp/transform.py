@@ -1,4 +1,5 @@
 import math
+import random
 import typing
 
 import torch
@@ -6,38 +7,6 @@ from torch import cuda
 
 from srwarp import wtypes
 from srwarp import grid
-
-
-class Matrix3x3(object):
-    '''
-    torch.Tensor is not a suitable format
-    to handle small transformation matrices
-    due to several limitations:
-        1) Precision
-        2) Speed
-    '''
-
-    def __init__(
-            self,
-            a: float,
-            b: float,
-            c: float,
-            d: float,
-            e: float,
-            f: float,
-            g: float,
-            h: float,
-            i: float) -> None:
-
-        self.data = [
-            [a, b, c],
-            [d, e, f],
-            [g, h, i],
-        ]
-        return
-
-    def inverse(self):
-        pass
 
 
 @torch.no_grad()
@@ -124,9 +93,46 @@ def compensate_matrix(
 
     x_len, x_offset = get_dimension(0)
     y_len, y_offset = get_dimension(1)
-    t = translation(x_offset, y_offset)
-    m = torch.matmul(t, m)
+    m = compensate_offset(m, x_offset, y_offset, offset_first=False)
     return m, (y_len, x_len), (y_offset, x_offset)
+
+@torch.no_grad()
+def generate_transform(
+        x: torch.Tensor,
+        smin: float=0.35,
+        smax: float=0.5,
+        hmax: float=0.25,
+        rmax: float=15,
+        pmin: float=-0.6,
+        pmax: float=0.6) -> torch.Tensor:
+
+    h = x.size(-2)
+    w = x.size(-1)
+    mh = random_sheering(hmax)
+    mr = random_rotation(rmax)
+    ms = random_scaling(smin, smax)
+    mp = random_projection(pmin, pmax, -0.75, 0.125, h, w)
+
+    m = torch.matmul(mh, mr)
+    m = torch.matmul(m, ms)
+    m = torch.matmul(m, mp)
+    return m
+
+@torch.no_grad()
+def sheering(hx: float, hy: float) -> torch.Tensor:
+    m = torch.DoubleTensor([
+        [1, hx, 0],
+        [hy, 1, 0],
+        [0, 0, 1],
+    ])
+    return m
+
+@torch.no_grad()
+def random_sheering(hmax: float) -> torch.Tensor:
+    hx = random.uniform(-hmax, hmax)
+    hy = random.uniform(-hmax, hmax)
+    m = sheering(hx, hy)
+    return m
 
 @torch.no_grad()
 def compensate_offset(
@@ -177,6 +183,13 @@ def scaling(sx: float, sy: typing.Optional[float]=None) -> torch.Tensor:
     return m
 
 @torch.no_grad()
+def random_scaling(smin: float, smax: float) -> torch.Tensor:
+    sx = random.uniform(smin, smax)
+    sy = random.uniform(smin, smax)
+    m = scaling(sx, sy=sy)
+    return m
+
+@torch.no_grad()
 def compensate_rotation(m: torch.Tensor, theta: float) -> torch.Tensor:
     r = rotation(theta)
     m = torch.matmul(m, r)
@@ -188,6 +201,43 @@ def rotation(theta: float) -> torch.Tensor:
         [math.cos(theta), -math.sin(theta), 0],
         [math.sin(theta), math.cos(theta), 0],
         [0, 0, 1],
+    ])
+    return m
+
+def random_rotation(rmax: float) -> torch.Tensor:
+    rmax = abs(rmax)
+    rmax = min(rmax, 45)
+    theta = random.gauss(0, rmax / 3)
+    theta = max(min(theta, rmax), -rmax)
+    theta = 2 * math.pi * (theta / 360)
+    m = rotation(theta)
+    return m
+
+@torch.no_grad()
+def projection(px: float, py: float, tx: float, ty: float):
+    m = torch.DoubleTensor([
+        [1, 0, tx],
+        [0, 1, ty],
+        [px, py, 1],
+    ])
+    return m
+
+def random_projection(
+        pmin: float,
+        pmax: float,
+        tmin: float,
+        tmax: float,
+        h: float,
+        w: float) -> torch.Tensor:
+
+    px = random.uniform(pmin / w, pmax / w)
+    py = random.uniform(pmin / h, pmax / h)
+    tx = random.uniform(w * tmin, w * tmax)
+    ty = random.uniform(h * tmin, h * tmax)
+    m = torch.DoubleTensor([
+        [1, 0, tx],
+        [0, 1, ty],
+        [px, py, 1],
     ])
     return m
 
