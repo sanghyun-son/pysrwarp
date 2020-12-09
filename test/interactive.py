@@ -9,6 +9,7 @@ import imageio
 from PIL import Image
 import cv2
 import torch
+from torchvision import io
 from torchvision import utils as vutils
 
 from PyQt5.QtWidgets import QApplication
@@ -23,17 +24,6 @@ from PyQt5.QtCore import Qt
 from srwarp import transform
 from srwarp import warp
 
-def np2tensor(x: np.array) -> torch.Tensor:
-    x = np.transpose(x, (2, 0, 1))
-    x = torch.from_numpy(x)
-    with torch.no_grad():
-        while x.dim() < 4:
-            x.unsqueeze_(0)
-
-        x = x.float() / 255
-
-    return x
-
 def tensor2np(x: torch.Tensor) -> np.array:
     with torch.no_grad():
         x = 255 * x
@@ -45,6 +35,13 @@ def tensor2np(x: torch.Tensor) -> np.array:
     x = np.ascontiguousarray(x)
     return x
 
+def read2tensor(img: str) -> torch.Tensor:
+    x = io.read_image(img)
+    x = x.cuda()
+    x = x.float()
+    x /= 255
+    x.unsqueeze_(0)
+    return x
 
 class Interactive(QMainWindow):
 
@@ -60,9 +57,10 @@ class Interactive(QMainWindow):
         super().__init__()
         self.setStyleSheet('background-color: gray;')
         self.margin = 300
-        img = Image.open(img)
-        self.img = np.array(img)
-        self.img_tensor = np2tensor(self.img).cuda()
+        self.img = imageio.imread(img)
+        self.img_tensor = read2tensor(img)
+        self.img_tensor_large = read2tensor('0806_x4.png')
+
         self.img_h = self.img.shape[0]
         self.img_w = self.img.shape[1]
         if single:
@@ -94,7 +92,6 @@ class Interactive(QMainWindow):
         #self.inter = cv2.INTER_CUBIC
         self.inter = cv2.INTER_LINEAR
         self.backend = 'core'
-        self.multi_scale = False
 
         self.single = single
         self.backup = None
@@ -130,6 +127,18 @@ class Interactive(QMainWindow):
 
         if e.key() == Qt.Key_Shift:
             self.shift = True
+
+        if e.key() == Qt.Key_1:
+            self.backend = 'opencv'
+            self.update()
+
+        if e.key() == Qt.Key_2:
+            self.backend = 'core'
+            self.update()
+
+        if e.key() == Qt.Key_3:
+            self.backend = 'srcv'
+            self.update()
 
         if e.key() == Qt.Key_I:
             if self.inter == cv2.INTER_CUBIC:
@@ -202,7 +211,7 @@ class Interactive(QMainWindow):
         m = cv2.getPerspectiveTransform(points_from, points_to)
         m = torch.from_numpy(m)
 
-        dummy = torch.zeros(1, 1, self.img_h, self.img_w)
+        dummy = torch.zeros(self.img_h, self.img_w)
         m, sizes, offsets = transform.compensate_matrix(dummy, m, exact=False)
         return m, sizes, offsets
 
@@ -269,9 +278,7 @@ class Interactive(QMainWindow):
             inter_method = 'Bicubic'
 
         self.setWindowTitle(
-            'Interpolation: {} / backend: {} / Multi-scale: {}'.format(
-                inter_method, self.backend, self.multi_scale,
-            )
+            'Interpolation: {} / backend: {}'.format(inter_method, self.backend)
         )
 
         qp = QPainter()
@@ -300,9 +307,15 @@ class Interactive(QMainWindow):
                 #borderMode=cv2.BORDER_REFLECT,
             )
             dump = None
-        elif self.backend == 'core':
+        elif self.backend == 'core' or self.backend == 'srcv':
+            if self.backend == 'core':
+                x = self.img_tensor
+            elif self.backend == 'srcv':
+                x = self.img_tensor_large
+                m = transform.compensate_scale(m, 0.25)
+
             y = warp.warp_by_function(
-                self.img_tensor,
+                x,
                 m,
                 f_inverse=False,
                 sizes=(h_new, w_new),
@@ -353,6 +366,7 @@ class Interactive(QMainWindow):
             m[1, 0], m[1, 1], m[1, 2],
             m[2, 0], m[2, 1], m[2, 2],
         )
+        '''
         if self.mouse_pos is not None and dump is not None:
             mouse_y, mouse_x = self.mouse_pos
             py = mouse_y - self.offset_h + offsets[0]
@@ -423,7 +437,7 @@ class Interactive(QMainWindow):
                             'omega': eo,
                         }
                         torch.save(dump_save, 'dump.pth')
-
+        '''
         self.status.showMessage(msg)
         qp.end()
         return

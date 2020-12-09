@@ -112,7 +112,7 @@ def warp_by_grid(
 
     with torch.no_grad():
         grid_discrete = mapping(grid_raw, kernel_size)
-        grid_offset = grid_raw - grid_discrete
+        grid_offset = (grid_raw - grid_discrete).float()
         local_offset = get_local_offset(grid_offset, kernel_size)
         # (N, k) each
         ox, oy = local_offset.unbind(dim=0)
@@ -130,12 +130,13 @@ def warp_by_grid(
                 ox, oy, j, regularize=regularize, dump=dump,
             )
 
+    '''
     if ox.dtype == torch.float64 and oy.dtype == torch.float64:
         ox = ox.float()
         oy = oy.float()
     else:
         raise ValueError('Single precision detected!')
-
+    '''
     # Calculate kernel weights
     if isinstance(kernel_type, str):
         # (N, k, k)
