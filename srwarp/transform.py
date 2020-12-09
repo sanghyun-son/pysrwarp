@@ -119,6 +119,25 @@ def generate_transform(
     return m
 
 @torch.no_grad()
+def get_random_transform(
+        x: torch.Tensor,
+        size_limit: int=1024,
+        max_iters: int=10,
+        **kwargs) -> torch.Tensor:
+
+    for _ in range(max_iters):
+        m = generate_transform(x, **kwargs)
+        m, sizes, _ = compensate_matrix(x, m)
+        if sizes[0] < size_limit and sizes[1] < size_limit:
+            return m
+
+    msg = 'No valid transform! Use larger max_iters. (Current: {})'.format(
+        max_iters,
+    )
+    print(msg)
+    return m
+
+@torch.no_grad()
 def sheering(hx: float, hy: float) -> torch.Tensor:
     m = torch.DoubleTensor([
         [1, hx, 0],
@@ -234,11 +253,7 @@ def random_projection(
     py = random.uniform(pmin / h, pmax / h)
     tx = random.uniform(w * tmin, w * tmax)
     ty = random.uniform(h * tmin, h * tmax)
-    m = torch.DoubleTensor([
-        [1, 0, tx],
-        [0, 1, ty],
-        [px, py, 1],
-    ])
+    m = projection(px, py, tx, ty)
     return m
 
 @torch.no_grad()

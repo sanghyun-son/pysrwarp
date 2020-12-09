@@ -109,6 +109,20 @@ def get_modulator(
     return mxx, mxy, myx, myy
 
 @torch.no_grad()
+def get_adaptive_coordinate(
+        ox: torch.Tensor,
+        oy: torch.Tensor,
+        du: torch.Tensor,
+        dv: torch.Tensor,
+        regularize: bool=True,
+        dump: typing.Optional[dict]=None) -> wtypes._TT:
+
+    mxx, mxy, myx, myy = get_modulator(du, dv, regularize=regularize, dump=dump)
+    oxp = mxx * ox + mxy * oy
+    oyp = myx * ox + myy * oy
+    return oxp, oyp
+
+@torch.no_grad()
 def modulation(
         ox: torch.Tensor,
         oy: torch.Tensor,
@@ -117,19 +131,24 @@ def modulation(
         eps: float=1e-12,
         dump: typing.Optional[dict]=None) -> wtypes._TT:
 
-    mxx, mxy, myx, myy = get_modulator(*j, regularize=regularize, dump=dump)
-    oxp = mxx * ox + mxy * oy
-    oyp = myx * ox + myy * oy
-
-    num = oxp.pow(2) + oyp.pow(2)
+    oxp, oyp = get_adaptive_coordinate(
+        ox, oy, *j, regularize=regularize, dump=dump,
+    )
+    # Optimized for better memory usage
+    oxp.pow_(2)
+    oyp.pow_(2)
+    num = oxp + oyp
     den = ox.pow(2) + oy.pow(2)
     # Zero-handling
     origin = (den < eps).float()
-    den = origin * eps + (1 - origin) * den
+    den *= (1 - origin)
+    origin *= eps
+    den += origin
 
-    factor = torch.sqrt(num / den)
-    oxp = factor * ox
-    oyp = factor * oy
+    num /= den
+    num.sqrt_()
+    oxp = num * ox
+    oyp = num * oy
 
     if dump is not None:
         debug.dump_variable(dump, 'oxp', oxp)
