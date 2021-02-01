@@ -261,7 +261,8 @@ def jacobian(
         f: typing.Union[torch.Tensor, typing.Callable],
         sizes: typing.Tuple[int, int],
         yi: typing.Optional[torch.Tensor]=None,
-        eps: float=0.5) -> wtypes._TT:
+        eps: float=0.5,
+        scale: float=1) -> wtypes._TT:
 
     '''
     J = [
@@ -269,17 +270,21 @@ def jacobian(
         [du[1], dv[1]]
     ]
     '''
+    kwargs = {}
     if isinstance(f, torch.Tensor):
         grid_function = grid.projective_grid
+    else:
+        grid_function = grid.functional_grid
+        kwargs['scale'] = scale
 
     # We do not need such high precisions for the Jacobian
     # Still, we use the double precision to ensure accuracy of the following
     # equations
     #f = f.float()
-    dl = grid_function(f, sizes, eps_x=-eps)
-    dr = grid_function(f, sizes, eps_x=eps)
-    dt = grid_function(f, sizes, eps_y=-eps)
-    db = grid_function(f, sizes, eps_y=eps)
+    dl = grid_function(f, sizes, eps_x=-eps, **kwargs)
+    dr = grid_function(f, sizes, eps_x=eps, **kwargs)
+    dt = grid_function(f, sizes, eps_y=-eps, **kwargs)
+    db = grid_function(f, sizes, eps_y=eps, **kwargs)
 
     if yi is not None:
         dl = dl[..., yi]
