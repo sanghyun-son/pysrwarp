@@ -256,6 +256,10 @@ def random_projection(
     m = projection(px, py, tx, ty)
     return m
 
+def identity() -> torch.Tensor:
+    m = torch.eye(3)
+    return m
+
 @torch.no_grad()
 def jacobian(
         f: typing.Union[torch.Tensor, typing.Callable],
