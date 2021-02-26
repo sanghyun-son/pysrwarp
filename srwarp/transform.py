@@ -257,7 +257,7 @@ def random_projection(
     return m
 
 def identity() -> torch.Tensor:
-    m = torch.eye(3)
+    m = torch.eye(3, dtype=torch.double)
     return m
 
 @torch.no_grad()

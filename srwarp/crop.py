@@ -50,25 +50,30 @@ def crop_search(
     #return None, None
 
 @torch.no_grad()
-def _mark_box(x: torch.Tensor, iy: int, ix: int, patch_size: int) -> None:
+def _mark_box(
+        x: torch.Tensor,
+        iy: int,
+        ix: int,
+        patch_size: int,
+        box_thick: int=3) -> None:
+
     '''
     For debugging purpose.
     '''
     jy = iy + patch_size
     jx = ix + patch_size
-    t = 1
-    x[..., 0, iy:(iy + t), ix:jx] = 1
-    x[..., 1, iy:(iy + t), ix:jx] = -1
-    x[..., 2, iy:(iy + t), ix:jx] = -1
-    x[..., 0, (jy - t):jy, ix:jx] = 1
-    x[..., 1, (jy - t):jy, ix:jx] = -1
-    x[..., 2, (jy - t):jy, ix:jx] = -1
-    x[..., 0, iy:jy, ix:(ix + t)] = 1
-    x[..., 1, iy:jy, ix:(ix + t)] = -1
-    x[..., 2, iy:jy, ix:(ix + t)] = -1
-    x[..., 0, iy:jy, (jx - t):jx] = 1
-    x[..., 1, iy:jy, (jx - t):jx] = -1
-    x[..., 2, iy:jy, (jx - t):jx] = -1
+    x[..., 0, iy:(iy + box_thick), ix:jx] = 1
+    x[..., 1, iy:(iy + box_thick), ix:jx] = -1
+    x[..., 2, iy:(iy + box_thick), ix:jx] = -1
+    x[..., 0, (jy - box_thick):jy, ix:jx] = 1
+    x[..., 1, (jy - box_thick):jy, ix:jx] = -1
+    x[..., 2, (jy - box_thick):jy, ix:jx] = -1
+    x[..., 0, iy:jy, ix:(ix + box_thick)] = 1
+    x[..., 1, iy:jy, ix:(ix + box_thick)] = -1
+    x[..., 2, iy:jy, ix:(ix + box_thick)] = -1
+    x[..., 0, iy:jy, (jx - box_thick):jx] = 1
+    x[..., 1, iy:jy, (jx - box_thick):jx] = -1
+    x[..., 2, iy:jy, (jx - box_thick):jx] = -1
     return
 
 def valid_crop(
@@ -78,7 +83,8 @@ def valid_crop(
         stochastic: bool=True,
         pool_size: int=4,
         margin: int=2,
-        debug: bool=False) -> typing.Tuple[torch.Tensor, int, int]:
+        debug: bool=False,
+        box_thick: int=3) -> typing.Tuple[torch.Tensor, int, int]:
 
     '''
         x (torch.Tensor): An input image.
@@ -119,6 +125,6 @@ def valid_crop(
 
     patch = x[..., iy:(iy + patch_size), ix:(ix + patch_size)]
     if debug:
-        _mark_box(x, iy, ix, patch_size)
+        _mark_box(x, iy, ix, patch_size, box_thick=box_thick)
 
     return patch, iy, ix
