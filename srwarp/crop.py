@@ -5,6 +5,7 @@ import torch
 from torch.nn import functional as F
 
 from srwarp import wtypes
+from srwarp import visualization
 
 def crop_preprocess(
         x: torch.Tensor,
@@ -48,33 +49,6 @@ def crop_search(
 
     raise ValueError('Cannot find a valid crop!')
     #return None, None
-
-@torch.no_grad()
-def _mark_box(
-        x: torch.Tensor,
-        iy: int,
-        ix: int,
-        patch_size: int,
-        box_thick: int=3) -> None:
-
-    '''
-    For debugging purpose.
-    '''
-    jy = iy + patch_size
-    jx = ix + patch_size
-    x[..., 0, iy:(iy + box_thick), ix:jx] = 1
-    x[..., 1, iy:(iy + box_thick), ix:jx] = -1
-    x[..., 2, iy:(iy + box_thick), ix:jx] = -1
-    x[..., 0, (jy - box_thick):jy, ix:jx] = 1
-    x[..., 1, (jy - box_thick):jy, ix:jx] = -1
-    x[..., 2, (jy - box_thick):jy, ix:jx] = -1
-    x[..., 0, iy:jy, ix:(ix + box_thick)] = 1
-    x[..., 1, iy:jy, ix:(ix + box_thick)] = -1
-    x[..., 2, iy:jy, ix:(ix + box_thick)] = -1
-    x[..., 0, iy:jy, (jx - box_thick):jx] = 1
-    x[..., 1, iy:jy, (jx - box_thick):jx] = -1
-    x[..., 2, iy:jy, (jx - box_thick):jx] = -1
-    return
 
 def valid_crop(
         x: torch.Tensor,
@@ -125,6 +99,6 @@ def valid_crop(
 
     patch = x[..., iy:(iy + patch_size), ix:(ix + patch_size)]
     if debug:
-        _mark_box(x, iy, ix, patch_size, box_thick=box_thick)
+        visualization.mark_box(x, iy, ix, patch_size, box_thick=box_thick)
 
     return patch, iy, ix

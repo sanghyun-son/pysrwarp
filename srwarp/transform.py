@@ -73,7 +73,8 @@ def transform_corners(
 def compensate_matrix(
         x: torch.Tensor,
         m: torch.Tensor,
-        exact: bool=False) -> typing.Tuple[torch.Tensor, wtypes._II, wtypes._II]:
+        exact: bool=False,
+        debug: bool=False) -> typing.Tuple[torch.Tensor, wtypes._II, wtypes._II]:
 
     # (3, 4)
     c = transform_corners(x, m)
@@ -81,8 +82,20 @@ def compensate_matrix(
     def get_dimension(dim: int) -> wtypes._II:
         s_min = c[dim].min()
         s_max = c[dim].max()
+
+        significant = 6
+        factor = 10**significant
+        s_min = (factor * s_min).round() / factor
+        s_max = (factor * s_max).round() / factor
+
         s_len = (s_max - s_min).ceil()
         s_len = int(s_len.item())
+
+        if debug:
+            print(f's_min for dim {dim}: {s_min}')
+            print(f's_max for dim {dim}: {s_max}')
+            print(f's_len for dim {dim}: {s_len}')
+
         if exact:
             s_offset = s_min
         else:
