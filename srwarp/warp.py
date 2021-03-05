@@ -2,6 +2,7 @@ import typing
 
 import torch
 from torch import nn
+from torch.cuda import amp
 
 from srwarp import wtypes
 from srwarp import transform
@@ -79,6 +80,7 @@ def get_local_offset(
     local_offset = local_coord - grid_offset
     return local_offset
 
+@amp.autocast(enabled=False)
 def warp_by_grid(
         x: torch.Tensor,
         grid_raw: torch.Tensor,
@@ -160,6 +162,7 @@ def warp_by_grid(
     y = svf.svf_forward(x, weight, sizes, kernel_size, xi, yi, fill, False)
     return y
 
+@amp.autocast(enabled=False)
 def warp_by_function(
         x: torch.Tensor,
         f: typing.Union[torch.Tensor, typing.Callable],

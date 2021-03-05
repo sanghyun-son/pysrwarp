@@ -3,6 +3,7 @@ import typing
 import torch
 from torch import autograd
 from torch.autograd import function
+from torch.cuda import amp
 
 from srwarp import wtypes
 import srwarp_cuda
@@ -50,6 +51,7 @@ def check_args(
 class SVF(autograd.Function):
 
     @staticmethod
+    @amp.custom_fwd(cast_inputs=torch.float32)
     def forward(
             ctx: function._ContextMethodMixin,
             x: torch.Tensor,
@@ -78,6 +80,7 @@ class SVF(autograd.Function):
         return y
 
     @staticmethod
+    @amp.custom_bwd
     def backward(
             ctx: function._ContextMethodMixin,
             grad_output: torch.Tensor) -> typing.List[wtypes._T]:

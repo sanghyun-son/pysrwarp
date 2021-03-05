@@ -1,10 +1,12 @@
 import typing
 
 import torch
+from torch.cuda import amp
 
 from srwarp import wtypes
 import srwarp_cuda
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def projective_grid(
         m: torch.Tensor,
@@ -31,6 +33,7 @@ def projective_grid(
     grid = grid.t().contiguous()
     return grid
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def get_safe(
         grid_raw: torch.Tensor,
@@ -47,6 +50,7 @@ def get_safe(
     yi, = is_in.nonzero(as_tuple=True)
     return grid_raw, yi
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def get_safe_projective_grid(
         m: torch.Tensor,
@@ -59,6 +63,7 @@ def get_safe_projective_grid(
     grid_raw, yi = get_safe(grid_raw, sizes_source)
     return grid_raw, yi
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def functional_grid(
         f: typing.Callable,
@@ -80,6 +85,7 @@ def functional_grid(
     grid_source += 0.5 * (scale_inv - 1)
     return grid_source
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def get_safe_functional_grid(
         f: typing.Callable,

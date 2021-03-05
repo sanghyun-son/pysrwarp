@@ -4,11 +4,13 @@ import typing
 
 import torch
 from torch import cuda
+from torch.cuda import amp
 
 from srwarp import wtypes
 from srwarp import grid
 
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def inverse_3x3(m: torch.Tensor) -> torch.Tensor:
     '''
@@ -45,6 +47,7 @@ def inverse_3x3(m: torch.Tensor) -> torch.Tensor:
     inv /= d
     return inv
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def transform_corners(
         x: torch.Tensor,
@@ -69,6 +72,7 @@ def transform_corners(
     #c = torch.trunc(factor * c) / factor
     return c
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def compensate_matrix(
         x: torch.Tensor,
@@ -109,6 +113,7 @@ def compensate_matrix(
     m = compensate_offset(m, x_offset, y_offset, offset_first=False)
     return m, (y_len, x_len), (y_offset, x_offset)
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def generate_transform(
         x: torch.Tensor,
@@ -131,6 +136,7 @@ def generate_transform(
     m = torch.matmul(m, mp)
     return m
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def get_random_transform(
         x: torch.Tensor,
@@ -150,6 +156,7 @@ def get_random_transform(
     print(msg)
     return m
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def sheering(hx: float, hy: float) -> torch.Tensor:
     m = torch.DoubleTensor([
@@ -159,6 +166,7 @@ def sheering(hx: float, hy: float) -> torch.Tensor:
     ])
     return m
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def random_sheering(hmax: float) -> torch.Tensor:
     hx = random.uniform(-hmax, hmax)
@@ -166,6 +174,7 @@ def random_sheering(hmax: float) -> torch.Tensor:
     m = sheering(hx, hy)
     return m
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def compensate_offset(
         m: torch.Tensor,
@@ -181,6 +190,7 @@ def compensate_offset(
 
     return m
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def translation(tx: float, ty: float) -> torch.Tensor:
     m = torch.DoubleTensor([
@@ -190,6 +200,7 @@ def translation(tx: float, ty: float) -> torch.Tensor:
     ])
     return m
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def compensate_scale(
         m: torch.Tensor,
@@ -200,6 +211,7 @@ def compensate_scale(
     m = torch.matmul(m, s)
     return m
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def scaling(sx: float, sy: typing.Optional[float]=None) -> torch.Tensor:
     if sy is None:
@@ -214,6 +226,7 @@ def scaling(sx: float, sy: typing.Optional[float]=None) -> torch.Tensor:
     ])
     return m
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def random_scaling(smin: float, smax: float) -> torch.Tensor:
     sx = random.uniform(smin, smax)
@@ -221,12 +234,14 @@ def random_scaling(smin: float, smax: float) -> torch.Tensor:
     m = scaling(sx, sy=sy)
     return m
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def compensate_rotation(m: torch.Tensor, theta: float) -> torch.Tensor:
     r = rotation(theta)
     m = torch.matmul(m, r)
     return m
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def rotation(theta: float) -> torch.Tensor:
     m = torch.DoubleTensor([
@@ -245,6 +260,7 @@ def random_rotation(rmax: float) -> torch.Tensor:
     m = rotation(theta)
     return m
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def projection(px: float, py: float, tx: float, ty: float):
     m = torch.DoubleTensor([
@@ -269,10 +285,12 @@ def random_projection(
     m = projection(px, py, tx, ty)
     return m
 
+@amp.autocast(enabled=False)
 def identity() -> torch.Tensor:
     m = torch.eye(3, dtype=torch.double)
     return m
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def jacobian(
         f: typing.Union[torch.Tensor, typing.Callable],
@@ -317,6 +335,7 @@ def jacobian(
     dv = dv.float()
     return du, dv
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def determinant(j: wtypes._TT) -> torch.Tensor:
     du, dv = j

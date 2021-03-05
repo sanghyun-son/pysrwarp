@@ -2,11 +2,13 @@ import math
 import typing
 
 import torch
+from torch.cuda import amp
 
 from srwarp import transform
 from srwarp import wtypes
 from srwarp import debug
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def get_omega(
         du: torch.Tensor,
@@ -19,6 +21,7 @@ def get_omega(
     omega = 0.5 * torch.atan2(num, den)
     return omega
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def get_ab(
         omega: torch.Tensor,
@@ -52,6 +55,7 @@ def get_ab(
 
     return a, b
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def align(omega: torch.Tensor, a: torch.Tensor, b: torch.Tensor) -> wtypes._TTT:
     quad = math.pi / 4
@@ -75,6 +79,7 @@ def align(omega: torch.Tensor, a: torch.Tensor, b: torch.Tensor) -> wtypes._TTT:
 
     return omega_new, a_new, b_new
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def get_modulator(
         du: torch.Tensor,
@@ -108,6 +113,7 @@ def get_modulator(
     myy = b * cos
     return mxx, mxy, myx, myy
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def get_adaptive_coordinate(
         ox: torch.Tensor,
@@ -122,6 +128,7 @@ def get_adaptive_coordinate(
     oyp = myx * ox + myy * oy
     return oxp, oyp
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def modulation(
         ox: torch.Tensor,

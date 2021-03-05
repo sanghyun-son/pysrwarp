@@ -6,7 +6,9 @@ import numpy as np
 from srwarp import wtypes
 
 import torch
+from torch.cuda import amp
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def sine(a: float=2, t: float=12) -> typing.Callable:
     def _sine(xp: torch.Tensor, yp: torch.Tensor) -> wtypes._TT:
@@ -16,6 +18,7 @@ def sine(a: float=2, t: float=12) -> typing.Callable:
 
     return _sine
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def barrel(hp: int=512, wp: int=512, k: float=1) -> typing.Callable:
     def _barrel(xp: torch.Tensor, yp: torch.Tensor) -> wtypes._TT:
@@ -33,6 +36,7 @@ def barrel(hp: int=512, wp: int=512, k: float=1) -> typing.Callable:
 
     return _barrel
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def spiral(hp: int=512, wp: int=512, k: float=1) -> typing.Callable:
     def _spiral(xp: torch.Tensor, yp: torch.Tensor) -> wtypes._TT:
@@ -54,6 +58,7 @@ def spiral(hp: int=512, wp: int=512, k: float=1) -> typing.Callable:
 
     return _spiral
 
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def calibration(
         m: typing.Union[torch.Tensor, np.array],
@@ -96,7 +101,7 @@ def calibration(
 
     return _calibration
 
-
+@amp.autocast(enabled=False)
 @torch.no_grad()
 def scaling(f: typing.Callable, scale: float=1) -> typing.Callable:
     def _scaling(xp: torch.Tensor, yp: torch.Tensor) -> wtypes._TT:
