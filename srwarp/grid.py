@@ -139,3 +139,27 @@ def draw_boundary(
             _draw(box_x + box_width - 1 + j, box_y - box_thick + i)
 
     return buffer
+
+@torch.no_grad()
+def convert_coord(
+        grid_srwarp: torch.Tensor,
+        sizes: wtypes._II) -> torch.Tensor:
+
+    '''
+    Convert SRWarp-style grid to LIIF-style grid.
+
+    Args:
+        grid_srwarp (torch.Tensor): SRWarp-style grid (2, N)
+        sizes (Tuple[int, int]): Size of the source image.
+
+    Return:
+        torch.Tensor: LIIF-style grid (N, 2)
+    '''
+    grid_srwarp = grid_srwarp.float()
+    grid_srwarp += 0.5
+    grid_srwarp[0] *= 2 / sizes[1]
+    grid_srwarp[1] *= 2 / sizes[0]
+    grid_srwarp -= 1
+    gx, gy = grid_srwarp.unbind(0)
+    grid_liif = torch.stack((gy, gx), dim=1)
+    return grid_liif
