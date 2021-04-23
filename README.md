@@ -36,9 +36,9 @@ Please use a proper CUDA version for building this repository.
 
 You can easily build this repository by following:
 ```bash
-git clone https://github.com/sanghyun-son/pysrwarp
-cd pysrwarp
-make
+$ git clone https://github.com/sanghyun-son/pysrwarp
+$ cd pysrwarp
+$ make
 ```
 If you have trouble building the code, please check ```pysrwarp/cuda/Makefile``` and type your CUDA version as follows:
 ```bash
