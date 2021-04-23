@@ -1,12 +1,12 @@
 # PySRWarp
 
 A core part implementation of the paper \
-Sanghyun Son and Kyoung Mu Lee, "SRWarp: Generalized Image Super-Resolution under Arbitrary Transformation", **CVPR** 2021
+Sanghyun Son and Kyoung Mu Lee, "SRWarp: Generalized Image Super-Resolution under Arbitrary Transformation," **CVPR** 2021
 
 ## Introduction
 
 In the image warping process, the target image can be obtained by applying spatially-varying filters to each local patch in a source image.
-Such operation can be easily implemented with the ```im2col``` function widely used in image processing. However, it is relateively slow and occupies large memory.
+Such an operation can be easily implemented with the ```im2col``` function widely used in image processing. However, it is relatively slow and occupies large memory.
 
 This repository provides an efficient PyTorch implementation with a CUDA backend for the spatially-varying filtering with the following specifications:
 
@@ -17,10 +17,8 @@ This repository provides an efficient PyTorch implementation with a CUDA backend
 - Miscellaneous utilities for image warping
 
 Please note that we provide this repository as a standalone so that you can easily utilize it in your project as well.
-Full implementations including training/test scripts, dataset, and models can be found from [here]().
-For your information, we also have a [technical report]() about our implementation.
-Please check it if your are beginner of CUDA programming or image processing.
-Since I am also a beginner in CUDA programming, there may exist several rooms for improvement.
+Full implementations, including training/test scripts, datasets, and models, can be found from [here](https://github.com/sanghyun-son/srwarp).
+Since I am a beginner in CUDA programming, there may exist several rooms for improvement.
 Any suggestions are welcomed to make this repository better.
 
 ## Requirements
@@ -67,7 +65,7 @@ m = torch.DoubleTensor([
 ])
 
 # Calculate the output sizes and shift the matrix
-# so that resulting image can be located in a regular coordinates.
+# so that the resulting image can be located in regular coordinates.
 m, sizes, _ = transform.compensate_matrix(x, m)
 
 # A simple warping process using bicubic interpolation.
@@ -96,7 +94,7 @@ valid_mean.backward()
 
 ## Citation
 
-If you have found our implementatio useful, please star and cite this repository as follows:
+If you have found our implementation helpful, please star and cite this repository as follows:
 
 ```
 @inproceedings{son_2021_srwarp,
