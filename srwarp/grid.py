@@ -163,3 +163,13 @@ def convert_coord(
     gx, gy = grid_srwarp.unbind(0)
     grid_liif = torch.stack((gy, gx), dim=1)
     return grid_liif
+
+@torch.no_grad()
+def get_convert_matrix(sizes: wtypes._II) -> torch.Tensor:
+    h, w = sizes
+    m = torch.DoubleTensor([
+        [2 / (w - 1), 0, (2 - w) / (w - 1)],
+        [0, 2 / (h - 1), (2 - h) / (h - 1)],
+        [0, 0, 1],
+    ])
+    return m
