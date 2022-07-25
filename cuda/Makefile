@@ -1,5 +1,5 @@
-NVCC = /usr/local/cuda-10.1/bin/nvcc
-INCFLAGS = -I /usr/local/cuda-10.1/include
+NVCC = /usr/local/cuda-11.2/bin/nvcc
+INCFLAGS = -I /usr/local/cuda-11.2/include
 CUDAFLAGS = -shared -O2 -gencode=arch=compute_75,code=sm_75 -std=c++14
 CUDAFLAGSADD = --compiler-options "-fPIC"
 

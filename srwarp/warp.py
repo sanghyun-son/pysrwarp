@@ -2,6 +2,7 @@ import typing
 
 import torch
 from torch import nn
+from torch.nn import functional as F
 from torch.cuda import amp
 
 from srwarp import wtypes
@@ -155,8 +156,12 @@ def warp_by_grid(
 
     # Padding
     pad = kernel_size // 2
-    x = utils.padding(x, -2, pad, pad, padding_type=padding_type)
-    x = utils.padding(x, -1, pad, pad, padding_type=padding_type)
+    if padding_type == 'zero':
+        x = F.pad(x, (pad, pad, pad, pad), mode='constant', value=0)
+    else:
+        x = utils.padding(x, -2, pad, pad, padding_type=padding_type)
+        x = utils.padding(x, -1, pad, pad, padding_type=padding_type)
+
     xi = grid_discrete[0] + x.size(-1) * grid_discrete[1]
     # Warping
     y = svf.svf_forward(x, weight, sizes, kernel_size, xi, yi, fill, False)
