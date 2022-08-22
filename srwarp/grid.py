@@ -77,7 +77,8 @@ def functional_grid(
     r = r.cuda()
 
     x = r % sizes[1] + eps_x
-    y = r // sizes[1] + eps_y
+    #y = r // sizes[1] + eps_y
+    y = r.div(sizes[1], rounding_mode='floor') + eps_y
     grid_source = f(x, y)
     grid_source = torch.stack(grid_source, dim=0)
     scale_inv = 1 / scale
