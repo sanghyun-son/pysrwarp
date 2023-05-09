@@ -1,4 +1,6 @@
+import math
 import typing
+import re
 
 import torch
 from torch import nn
@@ -102,6 +104,14 @@ def warp_by_grid(
         if j is None:
             if kernel_type in kernels:
                 kernel_size = kernels[kernel_type]
+            elif 'gaussian' in kernel_type:
+                try:
+                    sigma = re.findall('[0-9\.]+', kernel_type)
+                    sigma = float(sigma[0])
+                except:
+                    sigma = 1.0
+
+                kernel_size = 2 * math.ceil(3 * sigma)
             else:
                 msg = 'kernel type: {} is not supported!'.format(kernel_type)
                 raise ValueError(msg)

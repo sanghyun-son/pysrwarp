@@ -1,11 +1,29 @@
 import typing
+import re
 
 import torch
 
 __all__ = [
+    'gaussian_contribution',
+    'gaussian_contribution_2d',
     'cubic_contribution',
     'cubic_contribution2d',
 ]
+
+@torch.no_grad()
+def gaussian_contribution(x: torch.Tensor, sigma: float=1.0) -> torch.Tensor:
+    range_3sigma = (x.abs() <= 3 * sigma + 1)
+    # Normalization will be done after
+    cont = torch.exp(-x.pow(2) / (2 * sigma**2))
+    cont = cont * range_3sigma.to(dtype=x.dtype)
+    return cont
+
+@torch.no_grad()
+def gaussian_contribution_2d(x: torch.Tensor, y: torch.Tensor, sigma: float=1.0) -> torch.Tensor:
+    cont_x = gaussian_contribution(x, sigma=sigma)
+    cont_y = gaussian_contribution(y, sigma=sigma)
+    cont = cont_x * cont_y
+    return cont
 
 @torch.no_grad()
 def cubic_contribution(x: torch.Tensor, a: float=-0.5) -> torch.Tensor:
@@ -69,6 +87,14 @@ def calculate_contribution(
         return None
     elif kernel_type == 'bicubic':
         weight = cubic_contribution2d(x, y)
+    elif 'gaussian' in kernel_type:
+        try:
+            sigma = re.findall('[0-9\.]+', kernel_type)
+            sigma = float(sigma[0])
+        except:
+            sigma = 1.0
+
+        weight = gaussian_contribution_2d(x, y, sigma=sigma)
 
     weight = weight.view(weight.size(0), -1)
     weight = weight / weight.sum(-1, keepdim=True)
